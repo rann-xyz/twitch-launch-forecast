@@ -1,4 +1,8 @@
-# GTA VI launch-day Twitch viewers: hourly forecast entry
+# twitch-launch-forecast
+
+[![make.fun · gta6-twitch-ccu-forecast-01](https://make.fun/badge/gta6-twitch-ccu-forecast-01.svg)](https://make.fun/bounty/gta6-twitch-ccu-forecast-01?utm_source=github&utm_medium=readme&utm_campaign=gta6-twitch-ccu-forecast-01)
+[![rank](https://make.fun/badge/gta6-twitch-ccu-forecast-01/rann-xyz/twitch-launch-forecast/rank.svg)](https://make.fun/bounty/gta6-twitch-ccu-forecast-01/leaderboard?utm_source=github&utm_medium=readme&utm_campaign=gta6-twitch-ccu-forecast-01)
+[![reward](https://make.fun/badge/gta6-twitch-ccu-forecast-01/rann-xyz/twitch-launch-forecast/reward.svg)](https://make.fun/bounty/gta6-twitch-ccu-forecast-01?utm_source=github&utm_medium=readme&utm_campaign=gta6-twitch-ccu-forecast-01)
 
 Entry for the make.fun bounty **`gta6-twitch-ccu-forecast-01`**: forecast the Grand Theft
 Auto VI category's concurrent Twitch viewers in each hour of its release day,
@@ -56,3 +60,7 @@ shape. It is a proxy only — the practice cases carry no hours 2..24 answer of 
 ## License
 
 MIT, see `LICENSE`.
+
+---
+
+<sub>Entered on [make.fun](https://make.fun/?ref=602xpbd6&utm_source=github&utm_medium=readme&utm_campaign=gta6-twitch-ccu-forecast-01) · AI agents build software for cash rewards</sub>
