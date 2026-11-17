@@ -55,8 +55,6 @@ FRAC_MIN = 0.15       # hour 1 must hold at least this share of the day's peak
 WEIGHT_TAU = 0.5      # size weight: exp(-|ln(v1_i) - ln(p1)| / WEIGHT_TAU)
 SPREAD = 1.0          # multiplier on the reference dispersion
 BASE_SIGMA = 0.15     # the house baseline's log-spread per sqrt(hour)
-MIN_SIGMA = 0.02      # a forecast row is never narrower than this
-MAX_SIGMA = 2.0       # ... and never wider: exp(1.645 * 2) is already ~27x
 SIGMA_MIN = 0.02      # a degenerate reference set must not collapse the spread to nothing
 SIGMA_MAX = 2.0       # nor blow it up: exp(2.0 * 1.645) would be a 27x quantile
 
@@ -113,12 +111,15 @@ def hour1_print(case):
             except (ValueError, TypeError):
                 continue
             viewers = as_number(point.get("viewers"))
-            if viewers is None or viewers <= 0:
+            if viewers is None or viewers < 0:
                 continue
+            # The point's hour is the one that ends at or after the checkpoint.
             if start < checkpoint <= start + ONE_HOUR:
                 samples.append(viewers)
         if samples:
-            return sum(samples) / len(samples)
+            mean = sum(samples) / len(samples)
+            if math.isfinite(mean) and mean > 0:
+                return mean
     return 1.0
 
 
@@ -175,12 +176,12 @@ def baseline_row(p1, hour):
     return [p1 * math.exp(z * spread) for z in Z]
 
 
-def model_rows(p1, references, hours):
-    """Weighted reference-ratio quantiles for each hour, in ascending hour order."""
+def model_rows(p1, references):
+    """Weighted reference-ratio quantiles for hours 2..24, in ascending hour order."""
     log_p1 = math.log(max(p1, 1.0))
     rows = []
-    sigma_floor = 0.0
-    for hour in sorted(hours):
+    sigma_floor = SIGMA_MIN
+    for hour in HOURS:
         terms = []
         for v1, ratios in references:
             weight = math.exp(-abs(math.log(v1) - log_p1) / WEIGHT_TAU)
@@ -238,7 +239,6 @@ def forecast_case(case):
     The grader expects exactly hours 2..24, so the case's own `forecast` rows cannot
     choose the hours: they are always 2..24.
     """
-    hours = list(HOURS)
     p1 = hour1_print(case)
 
     references = []
@@ -253,9 +253,9 @@ def forecast_case(case):
                 references.append(built)
 
     if len(references) >= MIN_REFS:
-        rows = model_rows(p1, references, hours)
+        rows = model_rows(p1, references)
     else:
-        rows = [{"hour": hour, "q": tidy(baseline_row(p1, hour))} for hour in hours]
+        rows = [{"hour": hour, "q": tidy(baseline_row(p1, hour))} for hour in HOURS]
     return {"hours": rows}
 
 
@@ -273,6 +273,7 @@ def dump(payload):
 
 
 def main():
+    """Forecast every case in the input directory; never raises, always returns 0."""
     input_dir = Path(os.environ.get("MAKEFUN_INPUT_DIR") or "/input")
     output_dir = Path(os.environ.get("MAKEFUN_OUTPUT_DIR") or "/output")
     try:
@@ -286,6 +287,7 @@ def main():
         cases = []
 
     for path in cases:
+        # One case's bad data, or its failed write, must not cost the other cases.
         try:
             case = json.loads(path.read_text(encoding="utf-8"))
             if not isinstance(case, dict):
@@ -296,8 +298,9 @@ def main():
         try:
             (output_dir / (path.stem + ".out")).write_text(dump(payload), encoding="utf-8")
         except OSError:
-            pass
+            continue
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

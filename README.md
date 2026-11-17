@@ -17,10 +17,13 @@ in its first hour has a ratio curve that says nothing about a launch that is alr
 live). For each forecast hour the usable references are averaged in log space, each
 weighted by `exp(-|ln(v1_i) - ln(p1)| / 0.5)` so launches of a similar size count most:
 `mu_h` is the weighted mean of `ln(v_i[h] / v_i[1])` and `sigma_h` their weighted standard
-deviation, raised to be non-decreasing over the day. The forecast is
-`q_tau(h) = p1 * exp(mu_h + z_tau * sigma_h)`, with `p1` the case's hour-1 print.
-Fallbacks, always writing a valid file: fewer than 4 usable references (or a case that
-cannot be parsed) use the house persistence shape `p1 * exp(z_tau * 0.15 * sqrt(h-1))`.
+deviation, clamped to [0.02, 2.0] and raised to be non-decreasing over the day, so
+`q_tau(h) = p1 * exp(mu_h + z_tau * sigma_h)` with `p1` the case's hour-1 print: its
+`known` row when usable, else the mean of the `history_hourly` points in the hour ending
+at `checkpoint`, else 1. Fallbacks, each still writing a valid file: fewer than 4 usable
+references (or a case that cannot be parsed) use the house persistence shape
+`p1 * exp(z_tau * 0.15 * sqrt(h-1))`, hours other than 2..24 in `forecast` are ignored,
+and one bad case never stops the others.
 
 ## Run it locally
 
@@ -43,11 +46,12 @@ randomness and no clock, so two runs are byte-identical.
 
 ## Validation done here
 
-The four practice cases run in about 0.6 s for all of them (well under the 8 s per-case
-cap), byte-identical across runs, and pass the shape checker. Leave-one-out over the 26
-usable references of a case scores a mean pinball loss of about 0.202 against 0.284 for
-the persistence shape on the same launches. The official practice score cannot be
-computed offline: the case files carry no answers for hours 2..24.
+All four practice cases run in about 0.8 s together, a single-case run (as the grader
+does) in about 1 s including interpreter start-up — well under the 8 s cap. Runs are
+byte-identical and every output passes the shape checker. The offline proxy score is a
+leave-one-out over the 26 usable comparables, each forecast from the others and scored
+against its own hours: mean pinball loss about 0.202, against 0.284 for the persistence
+shape. It is a proxy only — the practice cases carry no hours 2..24 answer of their own.
 
 ## License
 
